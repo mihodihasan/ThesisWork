@@ -42,6 +42,9 @@ for i in results_df['time']:
 
 latitude = pd.Series(results_df.latitude).values
 longitude = pd.Series(results_df.longitude).values
+
+
+
 target = np.zeros(data_size)
 target = latitude
 #
