@@ -8,9 +8,24 @@ client = repo("data.cincinnati-oh.gov", "t1J7xReA9Slki6fndZ3ocYROj", "mihodihasa
 results = client.get("w2ka-rfbi", limit=80000)
 
 results_df = pd.DataFrame.from_records(results)
+unique_max = results_df['asset'].value_counts().idxmax()  # to determine which vehicle has maximum value
+results_df = results_df[results_df['asset'] == str(unique_max)]  # filtering to one vehicle data
 data_size = len(results_df)
-# print(results_df.asset.drop_duplicates('first'))
-# print(results_df.longitude.size)
+
+inner_index = 0
+outer_index = 0
+lat_threshold = .0001
+lng_threshold = .001
+# while outer_index<data_size:
+while outer_index < data_size:
+    lat = results_df.iloc([outer_index]['latitude'])
+    lng = results_df.iloc([outer_index]['longitude'])
+    count=0
+    while inner_index < outer_index:
+        if (abs(results_df.iloc(float([inner_index]['latitude']))-lat)<=lat_threshold and
+                    abs(results_df.iloc(float([inner_index]['longitude']))-lng)<=lng_threshold):
+
+
 idx = 0
 date = np.zeros(data_size)
 year = np.zeros(data_size)
@@ -43,8 +58,6 @@ for i in results_df['time']:
 latitude = pd.Series(results_df.latitude).values
 longitude = pd.Series(results_df.longitude).values
 
-
-
 target = np.zeros(data_size)
 target = latitude
 #
@@ -74,9 +87,9 @@ from sklearn import metrics
 # print(metrics.accuracy_score(target, res))
 
 from sklearn.model_selection import train_test_split
+
 X_train, X_test, y_train, y_test = train_test_split(feature, target, test_size=0.1, random_state=0)
-knn.fit(X_train,y_train);
-y_pred=knn.predict(X_test)
+knn.fit(X_train, y_train);
+y_pred = knn.predict(X_test)
 
 # print(metrics.accuracy_score(y_test, y_pred))
-print(results_df)

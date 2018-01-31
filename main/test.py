@@ -9,7 +9,6 @@ results = client.get("w2ka-rfbi", limit=80000)
 results_df = pd.DataFrame.from_records(results)
 # unique=pd.Series.unique(results_df)
 # unique=results_df.unique()
-u=results_df['asset'].value_counts().idxmax()
-results_df=results_df[results_df['asset'] == str(u)]
 
-print(results_df)
+
+print(results_df.iloc[0]['latitude'])
