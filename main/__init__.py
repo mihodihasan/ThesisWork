@@ -11,20 +11,32 @@ results_df = pd.DataFrame.from_records(results)
 unique_max = results_df['asset'].value_counts().idxmax()  # to determine which vehicle has maximum value
 results_df = results_df[results_df['asset'] == str(unique_max)]  # filtering to one vehicle data
 data_size = len(results_df)
-
+location = np.zeros(data_size)
 inner_index = 0
 outer_index = 0
-lat_threshold = .0001
-lng_threshold = .001
+lat_threshold = .001
+lng_threshold = .01
 # while outer_index<data_size:
 while outer_index < data_size:
-    lat = results_df.iloc([outer_index]['latitude'])
-    lng = results_df.iloc([outer_index]['longitude'])
-    count=0
+    lat = results_df.iloc[outer_index]['latitude']
+    lng = results_df.iloc[outer_index]['longitude']
+    count = 0
+    inner_index=0
     while inner_index < outer_index:
-        if (abs(results_df.iloc(float([inner_index]['latitude']))-lat)<=lat_threshold and
-                    abs(results_df.iloc(float([inner_index]['longitude']))-lng)<=lng_threshold):
-
+        if (abs(float(results_df.iloc[inner_index]['latitude']) - float(lat)) <= lat_threshold and abs(
+                    float(results_df.iloc[inner_index]['longitude']) - float(lng)) <= lng_threshold):
+            count += 1
+            if (count >= 5):
+                break
+        inner_index += 1
+    if (count >= 5):
+        location[outer_index] = 1
+    elif (count < 5):
+        location[outer_index] = 0
+    outer_index += 1
+# unique, counts = np.unique(location, return_counts=True)
+#
+# print(np.asarray((unique, counts)).T)
 
 idx = 0
 date = np.zeros(data_size)
@@ -59,9 +71,9 @@ latitude = pd.Series(results_df.latitude).values
 longitude = pd.Series(results_df.longitude).values
 
 target = np.zeros(data_size)
-target = latitude
+target = location
 #
-feature = np.zeros(shape=(data_size, 8))
+feature = np.zeros(shape=(data_size, 9))
 feature[:, 0] = date
 feature[:, 1] = month
 feature[:, 2] = year
@@ -70,6 +82,7 @@ feature[:, 4] = hour
 feature[:, 5] = minute
 feature[:, 6] = second
 feature[:, 7] = longitude
+feature[:, 8] = latitude
 #
 # print(feature.columns)
 # feature_array=pd.DataFrame.as_matrix(feature)
@@ -77,19 +90,20 @@ feature[:, 7] = longitude
 # target_array=pd.DataFrame.as_matrix(target)
 from sklearn.neighbors import KNeighborsClassifier as k
 
-knn = k(n_neighbors=2)
+knn = k(n_neighbors=10)
 #
-# knn.fit(feature, target)
+knn.fit(feature, target)
 
 from sklearn import metrics
 
-# res = knn.predict(feature)
-# print(metrics.accuracy_score(target, res))
+res = knn.predict(feature)
+print('accuracy')
+print(metrics.accuracy_score(target, res))
 
 from sklearn.model_selection import train_test_split
 
-X_train, X_test, y_train, y_test = train_test_split(feature, target, test_size=0.1, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(feature, target)
 knn.fit(X_train, y_train);
 y_pred = knn.predict(X_test)
-
-# print(metrics.accuracy_score(y_test, y_pred))
+print('train_test_split')
+print(metrics.accuracy_score(y_test, y_pred))
