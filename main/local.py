@@ -9,16 +9,11 @@ from sklearn.model_selection import train_test_split
 
 start_time = time.time()
 
-# Example authenticated client (needed for non-public datasets):
-client = repo("data.cincinnati-oh.gov", "t1J7xReA9Slki6fndZ3ocYROj", "mihodihasan@gmail.com", "%&!Mhl0Mb%&!")
 
-results = client.get("w2ka-rfbi", limit=200000)
+results_df = pd.read_csv(r'/home/mihodihasan/thesisDataset.csv')
 
-results_df = pd.DataFrame.from_records(results)
-unique_max = results_df['asset'].value_counts().idxmax()  # to determine which vehicle has maximum value
-results_df = results_df[results_df['asset'] == str(unique_max)]  # filtering to one vehicle data
 data_size = len(results_df)
-print('total data{}'.format(data_size))
+print('total data{}'.format(results_df.shape))
 location = np.zeros(data_size)
 inner_index = 0
 outer_index = 0
@@ -26,21 +21,24 @@ lat_threshold = .001
 lng_threshold = .01
 # while outer_index<data_size:
 while outer_index < data_size:
+    print('outer index is {}'.format(outer_index))
     lat = results_df.iloc[outer_index]['latitude']
     lng = results_df.iloc[outer_index]['longitude']
     count = 0
     inner_index = 0
     while inner_index < outer_index:
+        print('inner index is {}'.format(inner_index))
         if (abs(float(results_df.iloc[inner_index]['latitude']) - float(lat)) <= lat_threshold and abs(
                     float(results_df.iloc[inner_index]['longitude']) - float(lng)) <= lng_threshold):
             count += 1
-            if (count >= 5):
+            if count >= 5:
                 break
         inner_index += 1
-    if (count >= 5):
+    if count >= 5:
         location[outer_index] = 1
-    elif (count < 5):
+    elif count < 5:
         location[outer_index] = 0
+    print('total count {}'.format(count))
     outer_index += 1
 # unique, counts = np.unique(location, return_counts=True)
 #
@@ -53,14 +51,14 @@ month = np.zeros(data_size)
 day = np.zeros(data_size)
 hour = np.zeros(data_size)
 minute = np.zeros(data_size)
-second = np.zeros(data_size)
+# second = np.zeros(data_size)
 for i in results_df['time']:
-    year[idx] = i.split('T')[0].split('-')[0]
-    month[idx] = i.split('T')[0].split('-')[1]
-    date[idx] = i.split('T')[0].split('-')[2]
-    hour[idx] = i.split('T')[1].split('.')[0].split(':')[0]
-    minute[idx] = i.split('T')[1].split('.')[0].split(':')[1]
-    second[idx] = i.split('T')[1].split('.')[0].split(':')[2]
+    year[idx] = i.split(' ')[0].split('/')[2]
+    month[idx] = i.split(' ')[0].split('/')[0]
+    date[idx] = i.split(' ')[0].split('/')[1]
+    hour[idx] = i.split(' ')[1].split(':')[0]
+    minute[idx] = i.split(' ')[1].split(':')[1]
+    # second[idx] = i.split(' ')[1].split('.')[0].split(':')[2]
     # print(i.split('T')[1].split('.')[0].split(':'))
     # print (date)
 
@@ -81,16 +79,16 @@ longitude = pd.Series(results_df.longitude).values
 target = np.zeros(data_size)
 target = location
 #
-feature = np.zeros(shape=(data_size, 9))
+feature = np.zeros(shape=(data_size, 8))
 feature[:, 0] = date
 feature[:, 1] = month
 feature[:, 2] = year
 feature[:, 3] = day
 feature[:, 4] = hour
 feature[:, 5] = minute
-feature[:, 6] = second
-feature[:, 7] = longitude
-feature[:, 8] = latitude
+# feature[:, 6] = second
+feature[:, 6] = longitude
+feature[:, 7] = latitude
 #
 # print(feature.columns)
 # feature_array=pd.DataFrame.as_matrix(feature)
@@ -111,5 +109,5 @@ print('train_test_split')
 print(metrics.accuracy_score(y_test, y_pred))
 print("time elapsed: {:.2f}s".format(time.time() - start_time))
 
-# temp_df=pd.DataFrame({'date':date,'month':month,'year':year,'day':day,'hour':hour,'minute':minute,'second':second,'latitude':latitude,'longitude':longitude,'target':location})
-# temp_df.to_csv('/home/mihodihasan/Desktop/WithTarget.csv',sep=',',encoding='utf-8')
+temp_df=pd.DataFrame({'date':date,'month':month,'year':year,'day':day,'hour':hour,'minute':minute,'latitude':latitude,'longitude':longitude,'target':location})
+temp_df.to_csv('/home/mihodihasan/Desktop/WithTarget.csv',sep=',',encoding='utf-8')
